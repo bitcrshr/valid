@@ -20,6 +20,7 @@
     {
       devShells.default = mkShell {
         buildInputs = [
+          gh
           go
           gopls
           gofumpt
