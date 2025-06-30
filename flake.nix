@@ -27,7 +27,6 @@
         ];
 
         shellHook = ''
-          zsh
         '';
       };
     }
