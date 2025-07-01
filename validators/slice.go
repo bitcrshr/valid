@@ -3,46 +3,32 @@ package validators
 import "fmt"
 
 type sliceValidator[S ~[]E, E any, V Validator[E]] struct {
-	checks        []func(S) error
+	*baseValidator[S, SliceValidator[S, E, V]]
 	elemValidator V
 }
 
 var _ SliceValidator[[]string, string, StringValidator[string]] = &sliceValidator[[]string, string, StringValidator[string]]{}
 
 func NewSliceValidator[S ~[]E, E any, V Validator[E]](elemValidator V) SliceValidator[S, E, V] {
-	return &sliceValidator[S, E, V]{
-		checks: []func(S) error{
-			func(s S) error {
-				for i, el := range s {
-					if err := elemValidator.Validate(el); err != nil {
-						return fmt.Errorf("expected element at index %d to pass elem validator: %v", i, err)
-					}
-				}
-
-				return nil
-			},
-		},
+	v := &sliceValidator[S, E, V]{
 		elemValidator: elemValidator,
 	}
-}
+	v.baseValidator = newBaseValidator[S, SliceValidator[S, E, V]](v)
 
-func (v *sliceValidator[S, E, V]) Validate(value S) error {
-	for _, check := range v.checks {
-		if err := check(value); err != nil {
-			return err
-		}
-	}
+	v.checks = append(
+		v.checks,
+		func(s S) error {
+			for i, el := range s {
+				if err := elemValidator.Validate(el); err != nil {
+					return fmt.Errorf("element at index %d did not satisfy elem validator: %v", i, err)
+				}
+			}
 
-	return nil
-}
+			return nil
+		},
+	)
 
-func (v *sliceValidator[S, E, V]) ValidateAny(value any) error {
-	t, ok := value.(S)
-	if !ok {
-		return fmt.Errorf("expected value of type %T, but got %T", t, value)
-	}
-
-	return v.Validate(t)
+	return v
 }
 
 func (v *sliceValidator[S, E, V]) Empty() SliceValidator[S, E, V] {

@@ -8,35 +8,17 @@ import (
 )
 
 type numberValidator[T constraints.Integer | constraints.Float] struct {
-	checks []func(T) error
+	*baseValidator[T, NumberValidator[T]]
 }
 
 func NewNumberValidator[T constraints.Integer | constraints.Float]() NumberValidator[T] {
-	return &numberValidator[T]{
-		checks: make([]func(T) error, 0),
-	}
+	v := &numberValidator[T]{}
+	v.baseValidator = newBaseValidator[T, NumberValidator[T]](v)
+
+	return v
 }
 
 var _ NumberValidator[int] = NewNumberValidator[int]()
-
-func (v *numberValidator[T]) Validate(value T) error {
-	for _, check := range v.checks {
-		if err := check(value); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (v *numberValidator[T]) ValidateAny(value any) error {
-	t, ok := value.(T)
-	if !ok {
-		return fmt.Errorf("expected value to be of type %T, but got %T", value, t)
-	}
-
-	return v.Validate(t)
-}
 
 func (v *numberValidator[T]) Positive() NumberValidator[T] {
 	v.checks = append(

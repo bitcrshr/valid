@@ -1,7 +1,6 @@
 package validators
 
 import (
-	"cmp"
 	"golang.org/x/exp/constraints"
 	"regexp"
 )
@@ -40,6 +39,8 @@ type (
 		Matches(regex *regexp.Regexp) StringValidator[T]
 		NotMatches(regex *regexp.Regexp) StringValidator[T]
 		ValidUUID() StringValidator[T]
+
+		Satisfies(check func(T) error) StringValidator[T]
 	}
 
 	NumberValidator[T constraints.Integer | constraints.Float] interface {
@@ -57,16 +58,21 @@ type (
 		NotEqualTo(other T) NumberValidator[T]
 		In(haystack ...T) NumberValidator[T]
 		NotIn(haystack ...T) NumberValidator[T]
-		// Satisfies(predicate func(T) error) NumberValidator[T]
+
+		Satisfies(check func(T) error) NumberValidator[T]
 	}
 
 	MapValidator[K comparable, V any] interface {
 		Validator[map[K]V]
 
+		Empty() MapValidator[K, V]
+		NotEmpty() MapValidator[K, V]
 		HasKey(key K) MapValidator[K, V]
 		NotHasKey(key K) MapValidator[K, V]
 		HasKeyIn(haystack ...K) MapValidator[K, V]
 		NotHasKeyIn(haystack ...K) MapValidator[K, V]
+
+		Satisfies(check func(map[K]V) error) MapValidator[K, V]
 	}
 
 	SliceValidator[S ~[]E, E any, V Validator[E]] interface {
@@ -82,40 +88,8 @@ type (
 		AllSatisfy(v V) SliceValidator[S, E, V]
 		AnySatisfy(v V) SliceValidator[S, E, V]
 		NoneSatisfy(v V) SliceValidator[S, E, V]
-	}
 
-	CustomComparableSliceValidator[S ~[]E, E any, V Validator[E], F func(a, b E) bool] interface {
-		SliceValidator[S, E, V]
-
-		Contains(needle E) CustomComparableSliceValidator[S, E, V, F]
-		NotContains(needle E) CustomComparableSliceValidator[S, E, V, F]
-		ContainsAtLeast(needle E, count int) CustomComparableSliceValidator[S, E, V, F]
-		ContainsAtMost(needle E, count int) CustomComparableSliceValidator[S, E, V, F]
-		ContainsExact(needle E, count int) CustomComparableSliceValidator[S, E, V, F]
-	}
-
-	ComparableSliceValidator[S ~[]E, E comparable, V Validator[E]] interface {
-		SliceValidator[S, E, V]
-
-		Contains(needle E) ComparableSliceValidator[S, E, V]
-		NotContains(needle E) ComparableSliceValidator[S, E, V]
-		ContainsAtLeast(needle E, count int) ComparableSliceValidator[S, E, V]
-		ContainsAtMost(needle E, count int) ComparableSliceValidator[S, E, V]
-		ContainsExact(needle E, count int) ComparableSliceValidator[S, E, V]
-	}
-
-	CustomOrderedSliceValidator[S ~[]E, E any, V Validator[E], F func(a, b E) int] interface {
-		CustomComparableSliceValidator[S, E, V, func(a E, b E) bool]
-
-		Sorted() CustomOrderedSliceValidator[S, E, V, F]
-		Unsorted() CustomOrderedSliceValidator[S, E, V, F]
-	}
-
-	OrderedSliceValidator[S ~[]E, E cmp.Ordered, V Validator[E]] interface {
-		ComparableSliceValidator[S, E, V]
-
-		Sorted() OrderedSliceValidator[S, E, V]
-		Unsorted() OrderedSliceValidator[S, E, V]
+		Satisfies(check func(S) error) SliceValidator[S, E, V]
 	}
 
 	PointerValidator[T any, V Validator[T]] interface {
@@ -125,5 +99,7 @@ type (
 
 		Nil() PointerValidator[T, V]
 		NotNil() PointerValidator[T, V]
+
+		Satisfies(check func(*T) error) PointerValidator[T, V]
 	}
 )

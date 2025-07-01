@@ -24,6 +24,8 @@
           go
           gopls
           gofumpt
+          golangci-lint
+          golangci-lint-langserver
         ];
 
         shellHook = ''

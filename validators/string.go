@@ -10,34 +10,16 @@ import (
 )
 
 type stringValidator[T ~string] struct {
-	checks []func(T) error
+	*baseValidator[T, StringValidator[T]]
 }
 
 var _ StringValidator[string] = &stringValidator[string]{}
 
 func NewStringValidator[T ~string]() StringValidator[T] {
-	return &stringValidator[T]{
-		checks: make([]func(T) error, 0),
-	}
-}
+	v := &stringValidator[T]{}
+	v.baseValidator = newBaseValidator[T, StringValidator[T]](v)
 
-func (v *stringValidator[T]) Validate(value T) error {
-	for _, check := range v.checks {
-		if err := check(value); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (v *stringValidator[T]) ValidateAny(value any) error {
-	t, ok := value.(T)
-	if !ok {
-		return fmt.Errorf("expected value to be of type %T, but got %T", value, t)
-	}
-
-	return v.Validate(t)
+	return v
 }
 
 func (v *stringValidator[T]) Empty() StringValidator[T] {
